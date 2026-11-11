@@ -1,0 +1,12 @@
+# Python cache and environments
+__pycache__/
+*.pyc
+.venv/
+env/
+
+# Local Vector Database & Raw Data (Keep repo light)
+chroma_db/
+data/raw/
+
+# Environment variables & API keys
+.env
