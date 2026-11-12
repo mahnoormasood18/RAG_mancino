@@ -65,13 +65,6 @@ def run_ingestion_pipeline(
     logger.info("Initializing ChromaDB persistent client...")
     client = chromadb.PersistentClient(path=str(chroma_dir))
 
-    # Safely recreate collection
-    try:
-        client.delete_collection(name=collection_name)
-        logger.info(f"Deleted existing collection: {collection_name}")
-    except Exception:
-        logger.info(f"No existing collection named '{collection_name}' to delete. Creating new...")
-
     collection = client.get_or_create_collection(
         name=collection_name,
         embedding_function=mistral_ef,
@@ -92,7 +85,7 @@ def run_ingestion_pipeline(
         retries = 0
         while not success and retries < 5:
             try:
-                collection.add(
+                collection.upsert(
                     documents=documents[i:end_idx],
                     ids=ids[i:end_idx],
                     metadatas=metadatas[i:end_idx],
@@ -100,7 +93,7 @@ def run_ingestion_pipeline(
                 success = True
             except Exception as e:
                 retries += 1
-                wait_time = retries * 5
+                wait_time = retries * 2
                 logger.warning(
                     f"Rate limit hit or error occurred: {e}. Retrying in {wait_time}s..."
                 )
