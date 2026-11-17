@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from pathlib import Path
+import os  
 import chromadb
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from mistralai.client import Mistral
@@ -48,12 +49,11 @@ def load_jsonl_documents(file_path: Path) -> tuple[list[str], list[str], list[di
 def run_ingestion_pipeline(
     api_key: str,
     combined_file_path: Path,
-    chroma_dir: Path,
     collection_name: str = "mancino_retail_rag_mistral",
     batch_size: int = 100,
     pause_between_batches: float = 1.0,
 ) -> None:
-    """Orchestrates the vector database initialization and batch embedding/ingestion loop."""
+    """Orchestrates the vector database initialization via HTTP client and batch ingestion loop."""
     
     # 1. Initialize Mistral Client & Embedding Function
     mistral_client = Mistral(api_key=api_key)
@@ -61,9 +61,12 @@ def run_ingestion_pipeline(
         client=mistral_client, model="mistral-embed"
     )
 
-    # 2. Initialize ChromaDB Persistent Client
-    logger.info("Initializing ChromaDB persistent client...")
-    client = chromadb.PersistentClient(path=str(chroma_dir))
+    # 2. Initialize ChromaDB HTTP Client (Host/Port)
+    chroma_host = os.environ.get("CHROMA_HOST", "localhost")
+    chroma_port = int(os.environ.get("CHROMA_PORT", "8000"))
+    
+    logger.info(f"Connecting to ChromaDB server at {chroma_host}:{chroma_port}...")
+    client = chromadb.HttpClient(host=chroma_host, port=chroma_port)
 
     collection = client.get_or_create_collection(
         name=collection_name,
@@ -93,7 +96,7 @@ def run_ingestion_pipeline(
                 success = True
             except Exception as e:
                 retries += 1
-                wait_time = retries * 2
+                wait_time = retries
                 logger.warning(
                     f"Rate limit hit or error occurred: {e}. Retrying in {wait_time}s..."
                 )
@@ -102,7 +105,6 @@ def run_ingestion_pipeline(
         time.sleep(pause_between_batches)
 
     logger.info("Ingestion Complete using mistral-embed!")
-    logger.info(f"Vector collection saved at: {chroma_dir.resolve()}")
     
     # Verification Peek
     sample_data = collection.peek(limit=5)
