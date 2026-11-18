@@ -105,7 +105,7 @@ def get_collection(collection_name: str) -> str:
     Use this when you know which collection you need.
     """
     try:
-        collection = _chroma_client.get_collection(name=colection_name)
+        collection = _chroma_client.get_collection(name=collection_name)
         return (
             f"Collection found: {collection.name}\n"
             f"Total documents: {collection.count()}\n"
