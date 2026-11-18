@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq  # <--- Use ChatGroq
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 
-from tools import search_retail_knowledge_base, list_available_collections
+from tools import search_retail_knowledge_base, get_collection
 from prompts import build_system_prompt, UNKNOWN_ANSWER
 
 # 1. Mistral Client for query embeddings
@@ -27,7 +27,7 @@ def _build_agent():
 
     return create_agent(
         model=chat_model,
-        tools=[search_retail_knowledge_base, list_available_collections],
+        tools=[search_retail_knowledge_base, get_collection],
         system_prompt=build_system_prompt(),
         name="crumble_qa_agent",
         checkpointer=checkpointer,

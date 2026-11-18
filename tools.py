@@ -100,11 +100,16 @@ Content: {doc}
 
 
 @tool
-def list_available_collections() -> str:
-    """List all available collections present in the ChromaDB instance."""
+def get_collection(collection_name: str) -> str:
+    """Fetch a specific ChromaDB collection by name. 
+    Use this when you know which collection you need.
+    """
     try:
-        collections = _chroma_client.list_collections()
-        names = [col.name for col in collections]
-        return f"Available ChromaDB collections: {', '.join(names) if names else 'None found'}"
+        collection = _chroma_client.get_collection(name=colection_name)
+        return (
+            f"Collection found: {collection.name}\n"
+            f"Total documents: {collection.count()}\n"
+            f"Metadata: {collection.metadata}"
+        )
     except Exception as e:
-        return f"Error listing collections: {str(e)}"
+        return f"Collection '{collection_name}' not found. Error: {str(e)}"
